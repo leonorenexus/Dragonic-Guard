@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DRAGONIC Guard</string>
+    <string name="accessibility_service_label">DRAGONIC Guard — App Monitor</string>
+    <string name="accessibility_service_description">DRAGONIC Guard menggunakan Accessibility Service untuk memblokir aplikasi yang tidak diizinkan secara real-time dan melindungi anak dari konten yang tidak sesuai.</string>
+</resources>
