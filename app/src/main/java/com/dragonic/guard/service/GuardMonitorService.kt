@@ -4,9 +4,9 @@ import android.app.*
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.dragonic.guard.GuardApplication.Companion.CHANNEL_MONITOR
 import com.dragonic.guard.model.AppUsageRecord
 import com.dragonic.guard.repository.GuardRepository
 import com.dragonic.guard.ui.screens.MainActivity
@@ -20,21 +20,44 @@ class GuardMonitorService : Service() {
     private lateinit var repo: GuardRepository
     private lateinit var usageStatsManager: UsageStatsManager
 
+    companion object {
+        const val NOTIF_ID = 1001
+        const val CHANNEL_MONITOR = "dragonic_guard_monitor"
+        const val CHANNEL_ALERT = "dragonic_guard_alert"
+    }
+
     override fun onCreate() {
         super.onCreate()
         repo = GuardRepository(applicationContext)
         usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        createNotificationChannels()
         startForeground(NOTIF_ID, buildNotification())
         startMonitoring()
+    }
+
+    private fun createNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_MONITOR, "Guard Monitor",
+                    NotificationManager.IMPORTANCE_LOW).apply {
+                    description = "DRAGONIC Guard aktif memantau"
+                }
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ALERT, "Guard Alert",
+                    NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "Notifikasi peringatan orang tua"
+                }
+            )
+        }
     }
 
     private fun startMonitoring() {
         scope.launch {
             while (isActive) {
-                try {
-                    collectAndSaveUsage()
-                } catch (_: Exception) {}
-                delay(60_000) // every minute
+                try { collectAndSaveUsage() } catch (_: Exception) {}
+                delay(60_000)
             }
         }
     }
@@ -49,9 +72,7 @@ class GuardMonitorService : Service() {
         }.timeInMillis
 
         val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            startOfDay,
-            now
+            UsageStatsManager.INTERVAL_DAILY, startOfDay, now
         )
 
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -90,17 +111,7 @@ class GuardMonitorService : Service() {
             .build()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int =
-        START_STICKY
-
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
     override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onDestroy() {
-        super.onDestroy()
-        scope.cancel()
-    }
-
-    companion object {
-        const val NOTIF_ID = 1001
-    }
+    override fun onDestroy() { super.onDestroy(); scope.cancel() }
 }
