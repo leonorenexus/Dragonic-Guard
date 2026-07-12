@@ -26,6 +26,13 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Download gradle-wrapper.jar
+        run: |
+          mkdir -p gradle/wrapper
+          curl -sL "https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar
+          echo "gradle-wrapper.jar size: $(wc -c < gradle/wrapper/gradle-wrapper.jar) bytes"
+
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
