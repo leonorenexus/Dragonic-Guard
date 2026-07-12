@@ -38,7 +38,6 @@ fun AppControlScreen(vm: MainViewModel) {
             SectionHeader(title = "Kontrol Aplikasi", subtitle = "Kelola akses per aplikasi")
             Spacer(Modifier.height(16.dp))
 
-            // Search field
             OutlinedTextField(
                 value = search,
                 onValueChange = { search = it },
@@ -76,7 +75,6 @@ fun AppControlScreen(vm: MainViewModel) {
         }
     }
 
-    // Limit Dialog
     if (showLimitDialog != null) {
         val pkg = showLimitDialog!!
         val app = installedApps.find { it.packageName == pkg }
@@ -86,14 +84,10 @@ fun AppControlScreen(vm: MainViewModel) {
         AlertDialog(
             onDismissRequest = { showLimitDialog = null },
             containerColor = GuardDeepBlue,
-            title = {
-                Text("Batas Waktu Harian", color = GuardWhite,
-                    style = MaterialTheme.typography.titleLarge)
-            },
+            title = { Text("Batas Waktu Harian", color = GuardWhite, style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
-                    Text("${app?.appName}", color = GuardCyan,
-                        style = MaterialTheme.typography.bodySmall)
+                    Text("${app?.appName}", color = GuardCyan, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = limitInput,
@@ -118,14 +112,10 @@ fun AppControlScreen(vm: MainViewModel) {
                     val appName = app?.appName ?: pkg
                     vm.setDailyLimit(pkg, appName, mins)
                     showLimitDialog = null
-                }) {
-                    Text("Simpan", color = GuardCyan)
-                }
+                }) { Text("Simpan", color = GuardCyan) }
             },
             dismissButton = {
-                TextButton(onClick = { showLimitDialog = null }) {
-                    Text("Batal", color = GuardWhiteDim)
-                }
+                TextButton(onClick = { showLimitDialog = null }) { Text("Batal", color = GuardWhiteDim) }
             }
         )
     }
@@ -146,46 +136,24 @@ fun AppControlItem(
         modifier = Modifier.fillMaxWidth(),
         borderGlow = if (isBlocked) GuardRed.copy(alpha = 0.4f) else GuardGlassBorder
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // App icon placeholder
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        Brush.radialGradient(
-                            listOf(GuardCyan.copy(0.2f), GuardPurple.copy(0.1f))
-                        )
-                    ),
+                Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
+                    .background(Brush.radialGradient(listOf(GuardCyan.copy(0.2f), GuardPurple.copy(0.1f)))),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    appName.firstOrNull()?.uppercase() ?: "?",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = GuardCyan
-                )
+                Text(appName.firstOrNull()?.uppercase() ?: "?",
+                    style = MaterialTheme.typography.titleLarge, color = GuardCyan)
             }
-
             Spacer(Modifier.width(12.dp))
-
             Column(Modifier.weight(1f)) {
                 Text(appName, style = MaterialTheme.typography.bodyLarge, color = GuardWhite)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (isBlocked) StatusBadge("Diblokir", false)
-                    if (hasLimit) {
-                        Text(
-                            "Max ${rule?.dailyLimitMinutes}m/hari",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = GuardAmber
-                        )
-                    }
+                    if (hasLimit) Text("Max ${rule?.dailyLimitMinutes}m/hari",
+                        style = MaterialTheme.typography.labelSmall, color = GuardAmber)
                 }
             }
-
-            // Block toggle
             Switch(
                 checked = isBlocked,
                 onCheckedChange = onToggleBlock,
@@ -196,14 +164,9 @@ fun AppControlItem(
                     uncheckedTrackColor = GuardGlass
                 )
             )
-
-            // Limit button
             IconButton(onClick = onSetLimit) {
-                Icon(
-                    Icons.Filled.Timer,
-                    contentDescription = "Set limit",
-                    tint = if (hasLimit) GuardAmber else GuardWhiteDim.copy(0.4f)
-                )
+                Icon(Icons.Filled.Timer, null,
+                    tint = if (hasLimit) GuardAmber else GuardWhiteDim.copy(0.4f))
             }
         }
     }
