@@ -51,7 +51,7 @@ fun UsageScreen(vm: MainViewModel) {
             }
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(horizontal = 20.dp, bottom = 20.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 itemsIndexed(usageList.sortedByDescending { it.usageMinutes }) { index, record ->
