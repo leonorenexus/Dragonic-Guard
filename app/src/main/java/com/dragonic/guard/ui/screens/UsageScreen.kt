@@ -27,13 +27,8 @@ fun UsageScreen(vm: MainViewModel) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
             SectionHeader(title = "Pemakaian Hari Ini", subtitle = "Screen time per aplikasi")
             Spacer(Modifier.height(16.dp))
-
-            // Total card
             GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                     StatChip("Total", "${totalMinutes}m", GuardCyan)
                     StatChip("Aplikasi", "${usageList.size}", GuardPurple)
                     val hours = totalMinutes / 60
@@ -49,11 +44,9 @@ fun UsageScreen(vm: MainViewModel) {
                     Text("📊", fontSize = 48.sp)
                     Spacer(Modifier.height(12.dp))
                     Text("Belum ada data pemakaian",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = GuardWhiteDim)
-                    Text("Data akan muncul setelah izin Usage Access diaktifkan",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GuardWhiteDim.copy(0.5f))
+                        style = MaterialTheme.typography.titleMedium, color = GuardWhiteDim)
+                    Text("Aktifkan izin Usage Access terlebih dahulu",
+                        style = MaterialTheme.typography.bodySmall, color = GuardWhiteDim.copy(0.5f))
                 }
             }
         } else {
@@ -64,72 +57,42 @@ fun UsageScreen(vm: MainViewModel) {
                 itemsIndexed(usageList.sortedByDescending { it.usageMinutes }) { index, record ->
                     val percent = record.usageMinutes.toFloat() / totalMinutes
                     val barColor = when (index) {
-                        0 -> GuardCyan
-                        1 -> GuardPurple
-                        2 -> GuardAmber
+                        0 -> GuardCyan; 1 -> GuardPurple; 2 -> GuardAmber
                         else -> GuardWhiteDim.copy(alpha = 0.5f)
                     }
-
                     GlassCard(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            Modifier.fillMaxWidth(),
+                        Row(Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            Row(verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
+                                modifier = Modifier.weight(1f)) {
                                 Box(
-                                    Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
+                                    Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
                                         .background(barColor.copy(alpha = 0.15f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        "${index + 1}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = barColor
-                                    )
+                                    Text("${index + 1}",
+                                        style = MaterialTheme.typography.labelSmall, color = barColor)
                                 }
                                 Column {
                                     Text(record.appName,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = GuardWhite)
+                                        style = MaterialTheme.typography.bodyLarge, color = GuardWhite)
                                     Text("${(percent * 100).toInt()}% dari total",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = GuardWhiteDim.copy(0.5f))
                                 }
                             }
-                            Text(
-                                "${record.usageMinutes}m",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = barColor
-                            )
+                            Text("${record.usageMinutes}m",
+                                style = MaterialTheme.typography.titleMedium, color = barColor)
                         }
-
                         Spacer(Modifier.height(8.dp))
-                        // Progress bar
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
+                        Box(Modifier.fillMaxWidth().height(4.dp)
+                            .clip(RoundedCornerShape(2.dp)).background(GuardGlass)) {
+                            Box(Modifier.fillMaxWidth(percent).height(4.dp)
                                 .clip(RoundedCornerShape(2.dp))
-                                .background(GuardGlass)
-                        ) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth(percent)
-                                    .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            listOf(barColor, barColor.copy(alpha = 0.4f))
-                                        )
-                                    )
-                            )
+                                .background(Brush.horizontalGradient(
+                                    listOf(barColor, barColor.copy(alpha = 0.4f)))))
                         }
                     }
                 }
