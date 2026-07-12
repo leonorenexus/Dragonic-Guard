@@ -3,13 +3,18 @@ package com.dragonic.guard.service
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import com.dragonic.guard.receiver.GuardDeviceAdminReceiver
 import com.dragonic.guard.repository.GuardRepository
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class GuardFCMService : FirebaseMessagingService() {
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
@@ -22,7 +27,6 @@ class GuardFCMService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Save token to Firebase for parent to target
         val repo = GuardRepository(applicationContext)
         com.google.firebase.firestore.FirebaseFirestore.getInstance()
             .collection("devices")
@@ -40,8 +44,13 @@ class GuardFCMService : FirebaseMessagingService() {
 
     private fun syncRules() {
         val repo = GuardRepository(applicationContext)
-        kotlinx.coroutines.GlobalScope.launch {
+        scope.launch {
             repo.syncRulesFromFirebase()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
     }
 }
