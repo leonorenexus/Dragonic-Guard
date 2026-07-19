@@ -19,86 +19,75 @@ import java.util.*
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val repo = GuardRepository(app)
-    private val dpm = app.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    private val adminComp = ComponentName(app, GuardDeviceAdminReceiver::class.java)
+    private val repo  = GuardRepository(app)
+    private val dpm   = app.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    private val admin = ComponentName(app, GuardDeviceAdminReceiver::class.java)
 
-    val allRules: StateFlow<List<AppRule>> = repo.getAllRules()
+    val allRules: StateFlow<List<AppRule>> = repo.allRules()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _todayUsage = MutableStateFlow<List<AppUsageRecord>>(emptyList())
-    val todayUsage: StateFlow<List<AppUsageRecord>> = _todayUsage
+    private val _usage = MutableStateFlow<List<AppUsageRecord>>(emptyList())
+    val todayUsage: StateFlow<List<AppUsageRecord>> = _usage
 
     private val _installedApps = MutableStateFlow<List<InstalledApp>>(emptyList())
     val installedApps: StateFlow<List<InstalledApp>> = _installedApps
 
-    private val _isDeviceAdmin = MutableStateFlow(false)
-    val isDeviceAdmin: StateFlow<Boolean> = _isDeviceAdmin
+    private val _isAdmin = MutableStateFlow(false)
+    val isAdmin: StateFlow<Boolean> = _isAdmin
 
-    val deviceId: String get() = repo.deviceId
+    val deviceId get() = repo.deviceId
 
     init {
-        loadTodayUsage()
+        loadUsage()
         loadInstalledApps()
-        refreshAdminStatus()
+        refreshAdmin()
     }
 
-    fun refreshAdminStatus() {
-        _isDeviceAdmin.value = dpm.isAdminActive(adminComp)
-    }
+    fun refreshAdmin() { _isAdmin.value = dpm.isAdminActive(admin) }
 
-    private fun loadTodayUsage() {
+    private fun loadUsage() {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         viewModelScope.launch {
-            repo.getUsageForDate(today).collect { _todayUsage.value = it }
+            repo.usageForDate(today).collect { _usage.value = it }
         }
     }
 
     private fun loadInstalledApps() {
         viewModelScope.launch {
             val pm = getApplication<Application>().packageManager
-            val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-                .filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 } // user apps only
-                .map { info ->
-                    InstalledApp(
-                        packageName = info.packageName,
-                        appName = pm.getApplicationLabel(info).toString()
-                    )
-                }
+            _installedApps.value = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+                .filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 }
+                .map { InstalledApp(it.packageName, pm.getApplicationLabel(it).toString()) }
                 .sortedBy { it.appName }
-            _installedApps.value = apps
         }
     }
 
-    fun setAppBlocked(packageName: String, appName: String, blocked: Boolean) {
+    fun setBlocked(pkg: String, name: String, blocked: Boolean) {
         viewModelScope.launch {
-            val existing = repo.getRuleForPackage(packageName)
-            repo.upsertRule(
-                existing?.copy(isBlocked = blocked) ?: AppRule(
-                    packageName = packageName,
-                    appName = appName,
-                    isBlocked = blocked
-                )
-            )
+            val existing = repo.ruleFor(pkg)
+            val rule = existing?.copy(isBlocked = blocked)
+                ?: AppRule(pkg, name, isBlocked = blocked)
+            // Save locally via Firestore (repo syncs back)
+            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("devices").document(repo.deviceId)
+                .collection("rules").document(pkg)
+                .set(rule)
         }
     }
 
-    fun setDailyLimit(packageName: String, appName: String, minutes: Int) {
+    fun setLimit(pkg: String, name: String, minutes: Int) {
         viewModelScope.launch {
-            val existing = repo.getRuleForPackage(packageName)
-            repo.upsertRule(
-                existing?.copy(dailyLimitMinutes = minutes) ?: AppRule(
-                    packageName = packageName,
-                    appName = appName,
-                    dailyLimitMinutes = minutes
-                )
-            )
+            val existing = repo.ruleFor(pkg)
+            val rule = existing?.copy(dailyLimitMinutes = minutes)
+                ?: AppRule(pkg, name, dailyLimitMinutes = minutes)
+            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("devices").document(repo.deviceId)
+                .collection("rules").document(pkg)
+                .set(rule)
         }
     }
 
-    fun lockDeviceNow() {
-        if (dpm.isAdminActive(adminComp)) dpm.lockNow()
-    }
+    fun lockNow() { if (dpm.isAdminActive(admin)) dpm.lockNow() }
 
     data class InstalledApp(val packageName: String, val appName: String)
 }
