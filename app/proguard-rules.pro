@@ -1,5 +1,4 @@
 -keep class com.dragonic.guard.model.** { *; }
 -keep class com.dragonic.guard.receiver.** { *; }
--keepattributes Signature
--keepattributes *Annotation*
+-keepattributes Signature, *Annotation*
 -dontwarn com.google.firebase.**
